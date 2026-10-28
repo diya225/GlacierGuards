@@ -1,0 +1,159 @@
+# ==============================================================================
+# GLOF Early Warning System — Pipeline Configuration
+# All tunable parameters live here. Never hardcode these in Python files.
+# ==============================================================================
+
+# ── Data ingestion settings ────────────────────────────────────────────────────
+data:
+  resolution_m: 10              # Target spatial resolution (metres)
+  start_date: "2015-01-01"      # Full Sentinel-1 era start
+  end_date: "2024-12-31"        # Update when running fresh downloads
+  cloud_cover_max_pct: 20       # S2 max cloud cover % for a scene to be used
+  s1_max_temporal_gap_days: 5   # Max days between S2 and paired S1 pass
+  landsat_start_date: "1990-01-01"  # Long historical baseline start
+
+# ── Sentinel-1 GRD settings ───────────────────────────────────────────────────
+sentinel1:
+  collection: "COPERNICUS/S1_GRD"
+  orbit_pass: ["ASCENDING", "DESCENDING"]
+  beam_mode: "IW"
+  polarisation: ["VV", "VH"]
+
+# ── Sentinel-2 settings ───────────────────────────────────────────────────────
+sentinel2:
+  collection: "COPERNICUS/S2_SR_HARMONIZED"
+  bands: ["B2", "B3", "B4", "B8", "B11"]  # Blue, Green, Red, NIR, SWIR
+
+# ── Landsat settings ──────────────────────────────────────────────────────────
+landsat:
+  collections:
+    - id: "LANDSAT/LT05/C02/T1_L2"
+      name: "Landsat 5"
+      period: ["1984-01-01", "2013-01-01"]
+      blue: "SR_B1"
+      green: "SR_B2"
+      red: "SR_B3"
+      nir: "SR_B4"
+      swir: "SR_B5"
+      qa: "QA_PIXEL"
+    - id: "LANDSAT/LC08/C02/T1_L2"
+      name: "Landsat 8"
+      period: ["2013-01-01", "2022-01-01"]
+      blue: "SR_B2"
+      green: "SR_B3"
+      red: "SR_B4"
+      nir: "SR_B5"
+      swir: "SR_B6"
+      qa: "QA_PIXEL"
+    - id: "LANDSAT/LC09/C02/T1_L2"
+      name: "Landsat 9"
+      period: ["2022-01-01", "2099-01-01"]
+      blue: "SR_B2"
+      green: "SR_B3"
+      red: "SR_B4"
+      nir: "SR_B5"
+      swir: "SR_B6"
+      qa: "QA_PIXEL"
+
+# ── Copernicus DEM ────────────────────────────────────────────────────────────
+dem:
+  collection: "COPERNICUS/DEM/GLO30_2024_1"  # Updated: GLO30 superseded by 2024 release
+  band: "DEM"
+
+# ── SAR preprocessing ─────────────────────────────────────────────────────────
+preprocessing:
+  sar:
+    speckle_filter: "enhanced_lee"
+    filter_size: 7              # 7x7 kernel window
+    normalize_method: "cdf"    # CDF histogram equalization to [0, 255]
+  # Output channel order (10 channels total)
+  stack_channels:
+    - VV
+    - VH
+    - NDWI_blue
+    - NDWI_green
+    - NDVI
+    - NDSI
+    - NDGI
+    - elevation
+    - slope
+    - aspect
+  tile_size: 256                # Tile size in pixels (256×256)
+  tile_overlap: 32              # Overlap between adjacent tiles in pixels
+
+# ── Segmentation model ────────────────────────────────────────────────────────
+model:
+  segmentation:
+    encoder: "efficientnet-b3"
+    in_channels: 10
+    out_channels: 1
+    pretrained: true            # ImageNet pretrained encoder
+    # Loss weights (summed, not averaged)
+    loss:
+      bce_weight: 1.0
+      dice_weight: 1.0
+      focal_weight: 1.0
+      focal_gamma: 2.0
+      focal_alpha: 0.25
+  temporal:
+    type: "conv_lstm"           # conv_lstm | attention
+    sequence_length: 6          # N past time steps used as input
+    hidden_dim: 64
+    num_layers: 2
+
+# ── Training ──────────────────────────────────────────────────────────────────
+training:
+  batch_size: 8
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  max_epochs: 100
+  patience: 15                  # Early stopping
+  val_split: 0.2
+  mixed_precision: true
+  seed: 42
+  num_workers: 4                # DataLoader workers
+  checkpoint_every_n_epochs: 5
+
+# ── Risk scoring ──────────────────────────────────────────────────────────────
+risk:
+  # Weights for moraine-dammed lakes (must sum to 1.0)
+  weights:
+    area_growth: 0.40
+    freeboard: 0.35
+    volume: 0.25
+  # Fallback weights for outlet lakes (freeboard weight = horizontal gap only)
+  outlet_lake_fallback:
+    area_growth: 0.45
+    freeboard: 0.30
+    volume: 0.25
+  # EWMA smoothing (lambda=0 → no memory; lambda=1 → frozen baseline)
+  ewma_lambda: 0.2
+  # CUSUM control chart (in sigma units)
+  cusum:
+    k_sigma: 0.5                # Allowance parameter
+    h_sigma: 4.5                # Decision interval (alert threshold)
+  # Rolling window for Mann-Kendall trend test
+  trend_window_days: 365
+  # Minimum number of observations before trend test is meaningful
+  trend_min_obs: 12
+
+# ── Area-to-volume scaling ────────────────────────────────────────────────────
+volume_scaling:
+  # Huggel et al. (2002): V = 0.104 × A^1.42
+  # Units: A in km², V in km³
+  huggel_2002:
+    coefficient: 0.104
+    exponent: 1.42
+    area_unit: "km2"
+    volume_unit: "km3"
+    citation: "Huggel et al. (2002), Remote Sensing of Environment"
+  # Wang et al. (2012), Himalayan-specific relation: V = 0.0354 × A^1.3724
+  wang_2012_himalaya:
+    coefficient: 0.0354
+    exponent: 1.3724
+    area_unit: "km2"
+    volume_unit: "km3"
+    citation: "Wang et al. (2012), cited in Muñoz et al. (2020)"
+    # Depth companion: D = 0.087 × A^0.434 (area in km², depth in m)
+    depth_coefficient: 0.087
+    depth_exponent: 0.434

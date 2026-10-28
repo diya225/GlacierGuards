@@ -1,0 +1,9 @@
+dataset,product,dates,access_route,license,attribution_text,citation
+Sentinel-1 GRD,SAR C-band VV/VH,2015-2024,Google Earth Engine / ASF HyP3,Free and open (Copernicus),"Contains modified Copernicus Sentinel data [year], processed by ESA","ESA Copernicus Programme"
+Sentinel-2 L2A,Optical multispectral,2015-2024,Google Earth Engine,Free and open (Copernicus),"Contains modified Copernicus Sentinel data [year], processed by ESA","ESA Copernicus Programme"
+Copernicus DEM GLO-30,Digital Elevation Model 30m,Static,Google Earth Engine / CDSE,[VERIFY exact license wording from product guide],[VERIFY and copy exact attribution from Copernicus DEM product guide],"Copernicus DEM (2021), available from CDSE"
+Landsat 5/8/9 Collection 2,Optical multispectral,1990-2024,Google Earth Engine,USGS public domain,"Landsat data courtesy of the U.S. Geological Survey","USGS/NASA Landsat Program"
+Google Earth Engine,Cloud compute platform,2015-2024,Google Cloud Project,[VERIFY current non-commercial terms],"Powered by Google Earth Engine","Gorelick et al. (2017), Remote Sensing of Environment, 10.1016/j.rse.2017.06.031"
+NASA HyP3 / ASF,SAR RTC processing,Selective dates,ASF Earthdata / HyP3 SDK,Free with Earthdata login,[VERIFY current ASF credit wording],"Alaska Satellite Facility / NASA"
+ICIMOD Glacial Lake Inventory,Lake polygons and hazard rankings,Latest available,ICIMOD website,[VERIFY license on download page],[VERIFY and copy attribution from ICIMOD download page],"ICIMOD (year) Glacial Lake Inventory"
+GLIMS Glacier Database,Lake outlines,Latest available,GLIMS website,Free for research,[VERIFY license],"GLIMS and NSIDC (2005, updated yearly)"

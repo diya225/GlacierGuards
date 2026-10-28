@@ -1,0 +1,49 @@
+# ============================================================
+# GLOF Early Warning System — Python Dependencies
+# ============================================================
+
+# ---- Core geospatial ----------------------------------------
+earthengine-api>=0.1.400
+asf_search>=7.0.0
+hyp3_sdk>=4.0.0
+rasterio>=1.3.0
+geopandas>=0.14.0
+shapely>=2.0.0
+pyproj>=3.6.0
+fiona>=1.9.0
+
+# ---- Scientific computing -----------------------------------
+numpy>=1.24.0
+scipy>=1.11.0
+scikit-image>=0.21.0
+scikit-learn>=1.3.0
+pandas>=2.0.0
+
+# ---- ML / Deep Learning -------------------------------------
+torch>=2.1.0
+torchvision>=0.16.0
+segmentation-models-pytorch>=0.3.3
+
+# ---- Temporal statistics ------------------------------------
+pymannkendall>=1.4.3
+
+# ---- API & serving ------------------------------------------
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+sqlalchemy>=2.0.0
+
+# ---- Utilities ----------------------------------------------
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+tqdm>=4.66.0
+requests>=2.31.0
+click>=8.1.0
+matplotlib>=3.8.0
+pillow>=10.0.0
+
+# ---- Docker SDK (for orchestration helpers) -----------------
+docker>=7.0.0
+
+# ---- Notebook -----------------------------------------------
+jupyter>=1.0.0
+ipykernel>=6.26.0

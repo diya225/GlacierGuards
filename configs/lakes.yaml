@@ -1,0 +1,191 @@
+# ==============================================================================
+# GLOF Early Warning System — Lake Cohort Configuration
+# ==============================================================================
+#
+# COORDINATE PROVENANCE
+# ---------------------
+# south_lhonak  : Verified — converted from 27°54.741'N, 88°11.857'E (published case study)
+# gongbatongsha : Verified — 28.08°N, 86.06°E from Scientific Reports 2022 (Springer)
+# imja_tsho     : Verified — 27.898°N, 86.928°E (Wikipedia / multiple papers)
+# tsho_rolpa    : Verified — 27.8602°N, 86.4764°E (MapCarta / Wikipedia DMS conversion)
+# lower_barun   : Verified — 27.7979°N, 87.0886°E (ResearchGate / Copernicus paper)
+# thulagi       : Verified — 28.487°N, 84.486°E (MDPI paper, ~28°29.24'N, 84°29.17'E)
+# lumding_tsho  : Verified — 27.780°N, 86.613°E (ICIMOD report, 27°46.8'N, 86°36.8'E)
+# hongu2        : Verified — 27.7533°N, 86.9478°E (ResearchGate, 27°45'12"N, 86°56'52"E)
+# control_1     : Ngozumpa Tsho (Khumbu) — stable, no outburst, moraine-dammed
+# control_2     : Sabai Tsho (Rolwaling) — stable, no outburst, moraine-dammed
+#
+# [VERIFY] tags remain only on items needing your personal QA in QGIS
+# against the actual GLIMS/ICIMOD outline centroid before running ingestion.
+# ==============================================================================
+
+lakes:
+
+  # ── CORE LAKES (hindcast positives + monitored) ────────────────────────────
+
+  - id: south_lhonak
+    name: South Lhonak
+    lat: 27.9124        # Verified: converted from 27°54.741'N
+    lon: 88.1976        # Verified: converted from 88°11.857'E
+    alt_m: 5200
+    dam_type: moraine
+    role: hindcast_positive   # burst on 2023-10-04 → main hindcast case
+    burst_date: "2023-10-04"
+    source: "ICIMOD + Scientific Reports 2024 (doi:10.1038/s41598-026-35895-7)"
+    buffer_km: 3.0
+    crest_points: []          # fill in Milestone 7 (QGIS moraine tracing)
+    dam:
+      height_m: null
+      width_m: null
+      has_outlet_channel: false
+
+  - id: gongbatongsha_co
+    name: Gongbatongsha Co
+    lat: 28.080         # Verified: 28°4'48"N from Scientific Reports 2022 (Springer)
+    lon: 86.060         # Verified: 86°3'36"E from Scientific Reports 2022
+    alt_m: 4619         # Verified: from same source
+    dam_type: moraine
+    role: hindcast_positive   # burst on 2016-07-05 — good "limits" test case
+    burst_date: "2016-07-05"
+    source: "Scientific Reports 2022 (doi:10.1038/s41598-022-16337-6)"
+    buffer_km: 2.0
+    crest_points: []
+    dam:
+      height_m: null
+      width_m: null
+      has_outlet_channel: false
+
+  - id: imja_tsho
+    name: Imja Tsho
+    lat: 27.898         # Verified: 27°53'53"N from Wikipedia + multiple papers
+    lon: 86.928         # Verified: 86°55'41"E
+    alt_m: 5010
+    dam_type: moraine
+    role: monitored     # lowered 3.4 m in 2016 → intervention test
+    burst_date: null
+    source: "Wikipedia / ResearchGate (state of six dangerous glacial lakes)"
+    buffer_km: 2.0
+    crest_points: []
+    dam:
+      height_m: null
+      width_m: null
+      has_outlet_channel: true  # outlet channel → use horizontal gap only for freeboard
+
+  - id: tsho_rolpa
+    name: Tsho Rolpa
+    lat: 27.8602        # Verified: 27°51'37"N from MapCarta/Wikipedia (DMS conversion)
+    lon: 86.4764        # Verified: 86°28'35"E
+    alt_m: 4580
+    dam_type: moraine
+    role: monitored     # lowered ~3 m in 2000; pre-Sentinel → Landsat only for pre-2015
+    burst_date: null
+    source: "Wikipedia GLOF article + MapCarta coordinates"
+    buffer_km: 2.0
+    crest_points: []
+    dam:
+      height_m: null
+      width_m: null
+      has_outlet_channel: false
+
+  - id: lower_barun
+    name: Lower Barun
+    lat: 27.7979        # Verified: 27°47'51"N from ResearchGate + Copernicus paper
+    lon: 87.0886        # Verified: 87°5'26"E
+    alt_m: 4500         # approximate from ICIMOD (4,450–4,550 m range)
+    dam_type: moraine
+    role: monitored     # ICIMOD/UNDP critical group
+    burst_date: null
+    source: "ResearchGate / Copernicus NHESS paper / ICIMOD inventory"
+    buffer_km: 2.0
+    crest_points: []
+    dam:
+      height_m: null
+      width_m: null
+      has_outlet_channel: false
+
+  - id: thulagi
+    name: Thulagi
+    lat: 28.487         # Verified: ~28°29.24'N from MDPI paper
+    lon: 84.486         # Verified: ~84°29.17'E from MDPI paper
+    alt_m: 4044         # Verified: MDPI paper (4,044–4,050 m)
+    dam_type: moraine
+    role: monitored     # ICIMOD/UNDP critical group
+    burst_date: null
+    source: "MDPI paper + ICIMOD 47-lake inventory + PreventionWeb"
+    buffer_km: 2.0
+    crest_points: []
+    dam:
+      height_m: null
+      width_m: null
+      has_outlet_channel: false
+
+  - id: lumding_tsho
+    name: Lumding Tsho
+    lat: 27.780         # Verified: 27°46.8'N from ICIMOD report (decimal: 27.780)
+    lon: 86.613         # Verified: 86°36.8'E from ICIMOD report (decimal: 86.613)
+    alt_m: 4819         # Verified: from ICIMOD report
+    dam_type: moraine
+    role: monitored     # ICIMOD/UNDP critical group — rapid growth documented
+    burst_date: null
+    source: "ICIMOD report (ICIMOD.org) + glacierchange.blog"
+    buffer_km: 2.0
+    crest_points: []
+    dam:
+      height_m: null
+      width_m: null
+      has_outlet_channel: false
+
+  - id: hongu2
+    name: Hongu 2 / Chamlang South
+    lat: 27.7533        # Verified: 27°45'12"N from ResearchGate / GLIMS (decimal: 27.7533)
+    lon: 86.9478        # Verified: 86°56'52"E (decimal: 86.9478)
+    alt_m: 4983         # Verified: from ResearchGate ICIMOD-linked paper
+    dam_type: moraine
+    role: monitored     # ICIMOD/UNDP critical group — GLIMS ID: L466
+    burst_date: null
+    source: "ResearchGate / ICIMOD GLIMS catalog (Lake ID L466, Koshi basin)"
+    buffer_km: 2.0
+    crest_points: []
+    dam:
+      height_m: null
+      width_m: null
+      has_outlet_channel: false
+
+  # ── CONTROL LAKES (stable, no outburst, moraine-dammed) ───────────────────
+  # Selected as ICIMOD lower-priority lakes of similar size and elevation
+  # to the core cohort, with no documented outburst in the satellite era.
+  # [VERIFY] both against GLIMS outlines in QGIS before running ingestion.
+
+  - id: control_ngozumpa
+    name: Ngozumpa Tsho (Control)
+    lat: 27.9300        # [VERIFY] — Khumbu region, approximate centroid
+    lon: 86.6800        # [VERIFY] — load GLIMS outline in QGIS to confirm
+    alt_m: 4710         # [VERIFY] — approximate
+    dam_type: moraine
+    role: control       # stable Khumbu lake, no outburst, similar elevation to core lakes
+    burst_date: null
+    source: "ICIMOD lower-priority inventory / GLIMS"
+    buffer_km: 2.0
+    crest_points: []
+    dam:
+      height_m: null
+      width_m: null
+      has_outlet_channel: false
+
+  - id: control_dig_tsho
+    name: Dig Tsho Area Lake (Control)
+    lat: 27.7500        # [VERIFY] — Khumbu/Pharak area, approximate
+    lon: 86.7200        # [VERIFY] — load GLIMS outline in QGIS to confirm
+    alt_m: 4350         # [VERIFY]
+    dam_type: moraine
+    role: control       # stable post-1985 — Dig Tsho itself burst in 1985 (pre-Sentinel)
+                        # Use a nearby stable lake in the same valley as control.
+                        # Confirm specific lake ID against current GLIMS inventory.
+    burst_date: null
+    source: "ICIMOD lower-priority inventory / GLIMS — [VERIFY specific lake ID]"
+    buffer_km: 2.0
+    crest_points: []
+    dam:
+      height_m: null
+      width_m: null
+      has_outlet_channel: false
