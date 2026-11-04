@@ -86,6 +86,7 @@ def main():
     ap.add_argument("--epochs", type=int, default=60)
     ap.add_argument("--lr", type=float, default=2e-3)
     ap.add_argument("--train-before", help="YYYY-MM-DD: fit only on targets dated before this (e.g. burst date); later targets are scored out-of-sample")
+    ap.add_argument("--cv-year", action="store_true", help="blocked CV: score each season with a model that never saw that season (cheap, out-of-sample)")
     ap.add_argument("--loo", action="store_true", help="leave-one-target-out residuals (out-of-sample)")
     a = ap.parse_args()
     cfg = load_pipeline_config()["model"]["temporal"]
@@ -109,10 +110,14 @@ def main():
     torch.save({"model": final.state_dict(), "kind": kind, "hidden": a.hidden, "layers": layers, "N": N, "res": RES},
                ROOT / "models" / "temporal_checkpoint.pt")
 
+    cv_models = {}
     for lake, (csv, cell) in data.items():
         rows = []
         for s in [s for s in samples if s["lake"] == lake]:
-            if a.loo and any(t is s for t in train):
+            if a.cv_year:
+                yr = csv["date"][s["i"]][:4]
+                model = cv_models.setdefault(yr, fit([t for t in train if sdate(t)[:4] != yr], kind, a.hidden, layers, a.epochs, a.lr))
+            elif a.loo and any(t is s for t in train):
                 model = fit([t for t in train if t is not s], kind, a.hidden, layers, a.epochs, a.lr)
             else:
                 model = final
@@ -122,7 +127,7 @@ def main():
             persist = float(s["x"][-1].sum()) * cell
             rows.append({"date": csv["date"][s["i"]], "observed_area_m2": obs_a, "predicted_area_m2": pred_a,
                          "persistence_area_m2": persist, "residual_m2": obs_a - pred_a,
-                         "pixel_mae": float((pred - s["y"]).abs().mean()), "out_of_sample": bool(a.loo or (a.train_before and csv["date"][s["i"]] >= a.train_before))})
+                         "pixel_mae": float((pred - s["y"]).abs().mean()), "out_of_sample": bool(a.loo or a.cv_year or (a.train_before and csv["date"][s["i"]] >= a.train_before))})
         df = pd.DataFrame(rows)
         mad = np.median(np.abs(df["residual_m2"] - df["residual_m2"].median())) * 1.4826
         df["residual_z"] = (df["residual_m2"] - df["residual_m2"].median()) / max(mad, 1.0)
