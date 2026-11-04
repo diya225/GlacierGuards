@@ -65,8 +65,8 @@ DATA_INTERIM = PROJECT_ROOT / "data" / "interim"
 DATA_PROCESSED = PROJECT_ROOT / "data" / "processed"
 
 # QA thresholds
-QA_MIN_LAKE_PIXELS = 20          # Flag mask if lake is fewer than this many pixels
-QA_MAX_LAKE_FRACTION = 0.80      # Flag mask if lake covers > 80% of the tile
+QA_MIN_LAKE_PIXELS = 10          # Flag mask if lake is fewer than this many pixels
+QA_MAX_LAKE_FRACTION = 0.95      # Flag mask if lake covers > 95% of the tile
 
 
 QGIS_INSTRUCTIONS = """

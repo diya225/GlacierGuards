@@ -54,7 +54,7 @@ NODATA_VALUE = -9999.0
 # Enhanced Lee speckle filter
 # ─────────────────────────────────────────────────────────────────────────────
 
-def enhanced_lee_filter(band: np.ndarray, window: int = 7) -> np.ndarray:
+def enhanced_lee_filter(band: np.ndarray, window: int = 7, input_is_db: bool = False) -> np.ndarray:
     """
     Apply the Enhanced Lee adaptive speckle filter to a single SAR band.
 
@@ -69,8 +69,16 @@ def enhanced_lee_filter(band: np.ndarray, window: int = 7) -> np.ndarray:
     Returns:
         Filtered 2-D float32 array with the same shape as `band`.
     """
-    # Clip negative values that result from nodata
-    band = np.where(band < 0, np.nan, band).astype(np.float64)
+    # GEE COPERNICUS/S1_GRD stores backscatter in dB. Convert to linear power
+    # before the Lee filter; negative dB values are valid water/land returns.
+    valid = np.isfinite(band) & (band != NODATA_VALUE)
+    linear = np.full(band.shape, np.nan, dtype=np.float64)
+    if input_is_db:
+        linear[valid] = np.power(10.0, band[valid].astype(np.float64) / 10.0)
+    else:
+        valid &= band > 0
+        linear[valid] = band[valid]
+    band = linear
 
     local_mean = uniform_filter(np.nan_to_num(band), size=window)
     local_sq_mean = uniform_filter(np.nan_to_num(band) ** 2, size=window)
@@ -98,7 +106,7 @@ def linear_to_db(band: np.ndarray) -> np.ndarray:
     return db.astype(np.float32)
 
 
-def normalise_to_8bit(band: np.ndarray, p_low: float = 2.0, p_high: float = 98.0) -> np.ndarray:
+def normalise_to_8bit(band: np.ndarray, db_min: float = -30.0, db_max: float = 0.0) -> np.ndarray:
     """
     Normalise a float band to uint8 [0, 255] using percentile stretch (CDF mapping).
     Pixels that are NaN are set to 0 (nodata in uint8).
@@ -111,16 +119,10 @@ def normalise_to_8bit(band: np.ndarray, p_low: float = 2.0, p_high: float = 98.0
     Returns:
         uint8 array, same shape as `band`.
     """
-    valid = band[np.isfinite(band)]
-    if valid.size == 0:
-        return np.zeros_like(band, dtype=np.uint8)
-    lo = np.percentile(valid, p_low)
-    hi = np.percentile(valid, p_high)
-    if hi == lo:
-        return np.zeros_like(band, dtype=np.uint8)
-    clipped = np.clip(band, lo, hi)
-    normed = (clipped - lo) / (hi - lo) * 255.0
-    normed = np.where(np.isfinite(band), normed, 0.0)
+    valid = np.isfinite(band) & (band != NODATA_VALUE)
+    clipped = np.clip(band, db_min, db_max)
+    normed = (clipped - db_min) / (db_max - db_min) * 255.0
+    normed = np.where(valid, normed, 0.0)
     return normed.astype(np.uint8)
 
 
@@ -152,8 +154,9 @@ def process_s1_file(
         vh = np.where(vh == nodata, np.nan, vh)
 
     # Filter in linear space
-    vv_filt = enhanced_lee_filter(vv, window)
-    vh_filt = enhanced_lee_filter(vh, window)
+    # Earth Engine's S1_GRD VV/VH bands are already in dB.
+    vv_filt = enhanced_lee_filter(vv, window, input_is_db=True)
+    vh_filt = enhanced_lee_filter(vh, window, input_is_db=True)
 
     # Convert to dB
     vv_db = linear_to_db(vv_filt)
@@ -212,7 +215,7 @@ def preprocess_lake_sar(lake: dict, cfg: dict) -> None:
     )
 
     for tif_path in tqdm(tif_files, desc=f"SAR {lake['id']}", unit="file"):
-        date_str = tif_path.stem  # e.g. "2023-09-15"
+        date_str = tif_path.stem  # includes orbit/relative orbit for S1 scenes
         out_filtered = out_dir / f"{date_str}_filtered.tif"
         out_norm = out_dir / f"{date_str}_norm8.tif"
 

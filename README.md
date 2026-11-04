@@ -110,3 +110,17 @@ All weights are configurable in `configs/pipeline.yaml`.
 ---
 
 *See `provenance.csv` for full data provenance and attribution.*
+
+## make dataset (GLOID training set for Kaggle)
+Requires `.env` GEE credentials and the GLO/GLOID gpkg files in `data/external/gloid/` (Zenodo 10.5281/zenodo.19370146).
+```
+python scripts/list_candidate_lakes.py --n 30            # select lakes -> configs/training_lakes.csv
+python src/ingestion/gloid_fetch.py                      # download composites (resumable; failures in data/raw/_gloid_manifest.csv)
+python src/preprocessing/gloid_stack_tile.py             # stacks (data/interim) + tiles (data/processed)
+python scripts/gloid_to_masks.py                         # rasterize GLOID polygons -> mask.npy, reports/mask_manifest.csv
+python scripts/dataset_report.py                         # QA numbers, fails on misalignment/NaN
+python scripts/qa_overlays.py                            # overlays -> reports/qa/
+python scripts/build_kaggle_dataset.py                   # splits + glacierguards_kaggle.zip
+python scripts/verify_package.py                         # clean unzip + 2 training steps
+```
+Training instructions: `kaggle/KAGGLE_TRAINING.md` and `kaggle/kaggle_train.ipynb`.

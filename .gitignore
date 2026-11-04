@@ -52,3 +52,9 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# External datasets
+data/external/
+kaggle/*.zip
+results.zip
+glacierguards_kaggle.zip

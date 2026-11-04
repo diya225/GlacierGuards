@@ -48,6 +48,7 @@ DATA_PROCESSED = PROJECT_ROOT / "data" / "processed"
 
 TILE_SIZE = 256       # Default tile dimension in pixels
 CHANNEL_COUNT = 10    # Must match the stacked tensors
+NODATA_VALUE = -9999.0
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -94,6 +95,7 @@ def tile_image(
                 padded = np.zeros(
                     (CHANNEL_COUNT, tile_size, tile_size), dtype=np.float32
                 )
+                padded.fill(NODATA_VALUE)
                 padded[:, :ph, :pw] = patch
                 tiles.append((padded, row_start, col_start))
 
@@ -166,9 +168,13 @@ def tile_date(
         tile_name = f"tile_{row_id:03d}_{col_id:03d}.npy"
         tile_path = out_dir / tile_name
         np.save(tile_path, tile_arr)
+        valid_name = tile_name.replace(".npy", "_valid.npy")
+        valid_path = out_dir / valid_name
+        np.save(valid_path, np.isfinite(tile_arr) & (tile_arr != NODATA_VALUE))
         saved.append(
             {
                 "file": tile_name,
+                "valid_mask_file": valid_name,
                 "row_offset": r0,
                 "col_offset": c0,
                 "nodata_fraction": float(nodata_fraction),
