@@ -20,7 +20,7 @@ Sections 1 to 3 below were written before these findings and are partly supersed
   8. **Optional noise reductions, not needed to continue:** per-track series, averaging the 5 cross-validation checkpoints plus the final model (use expected area), flagging ice and wet-snow dates, a seasonal-climatology detector, and a detection curve. Choose any of them by pre-burst noise and IoU against the manual 2022 outline, never by how well they catch the burst.
 - **Independent validation exists.** `reports/gloid_vs_thirdpole.csv`: GLOID polygons vs the manual Third Pole inventory, median polygon IoU 0.95 on 16 lakes x 3 years. The model vs the manual 2022 South Lhonak outline: IoU 0.83 to 0.97 (optical dates 0.92 to 0.965, SAR-only 0.83 to 0.90).
 - **Next work (no hand-digitising):** `docs/INDEPENDENT_TEST_AND_BASELINES.md` with the lake list `configs/independent_test_lakes.csv` (50 primary + 20 backup lakes from the Third Pole inventory, built by `scripts/select_independent_lakes.py`).
-- **Not done:** Milestone 7 (needs crest points and weights); post-burst South Lhonak check against published area values (read the sources and cite the numbers; none verified yet).
+- **Not done:** Milestone 7 (needs crest points and weights; full instructions for Milestones 7 to 10 including the QGIS crest-point workflow are in `docs/MILESTONES_7_TO_END.md`, with the helper `scripts/crest_points_to_yaml.py`); post-burst South Lhonak check against published area values (read the sources and cite the numbers; none verified yet).
 - **Housekeeping:** `kaggle_dataset/` is no longer in the project folder (not deleted by me); `glacierguards_kaggle.zip` still has its contents. A `data/external/third_pole_inventory/` folder was added.
 
 ## 1. Where things stand
