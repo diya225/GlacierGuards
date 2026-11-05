@@ -51,12 +51,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--lake", default="south_lhonak")
     ap.add_argument("--ckpt", default=str(ROOT / "models" / "segmentation_checkpoint.pt"))
+    ap.add_argument("--stack-subdir", default="stacked", help="folder under data/interim/{lake}/ holding the stacks (stacked_s1date for the Sentinel-1-date stacks)")
     a = ap.parse_args()
     model, chans = load_model(Path(a.ckpt))
     out = ROOT / "data" / "predictions" / a.lake
     out.mkdir(parents=True, exist_ok=True)
     rows = []
-    for tif in sorted((ROOT / "data" / "interim" / a.lake / "stacked").glob("*.tif")):
+    for tif in sorted((ROOT / "data" / "interim" / a.lake / a.stack_subdir).glob("*.tif")):
         with rasterio.open(tif) as r:
             stack = r.read().astype(np.float32)
             px = abs(r.transform.a * r.transform.e)
