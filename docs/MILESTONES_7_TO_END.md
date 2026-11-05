@@ -1,12 +1,12 @@
 # Milestone 7 to the end: instructions
 
-For whoever continues the project (Aparna, the teammate, or an AI agent). Read `docs/HANDOFF.md` first for the current state and caveats. This document covers Milestone 7 (freeboard and risk score, including the QGIS crest-point work), Milestone 8 (evaluation), Milestone 9 (serving in Docker) and Milestone 10 (documentation). The original plan is in `docs/planning/GLOF_EWS_Build_Plan.md`; where this document differs from it, this document reflects what we learned and says why.
+This document covers Milestone 7 (freeboard and risk score, including the QGIS crest-point work), Milestone 8 (evaluation), Milestone 9 (serving in Docker) and Milestone 10 (documentation). The original plan is in `docs/planning/GLOF_EWS_Build_Plan.md`; where this document differs from it, this document reflects what we learned and says why.
 
 ## 0. Read this first
 
 ### Where the project stands
 - Lake segmentation (M5) is trained and validated on held-out lakes. Final model `models/seg_fused_test.pt`.
-- The temporal stage (M6) is done for South Lhonak only. The burst is detected with a simple drop rule; the deep forecaster is no better than "same as last scene". See `docs/HANDOFF.md` section 0 for exact numbers and caveats.
+- The temporal stage (M6) is done for six lakes (four outburst events, two quiet lakes): the plain drop detector finds 2 of 4 events and the exploratory per-track mode 3 of 4; the deep forecaster is no better than "same as last scene". Details, numbers and caveats: `docs/M6_MULTI_LAKE_RESULTS.md`.
 - `src/risk/` and `src/serving/` are empty packages. Nothing in M7 to M10 has been built.
 - The paper track (50-lake independent test and baselines) is in `docs/INDEPENDENT_TEST_AND_BASELINES.md` and runs in parallel to this document.
 
@@ -25,10 +25,10 @@ For whoever continues the project (Aparna, the teammate, or an AI agent). Read `
 
 ### Overview
 
-| Milestone | Goal | Needs from Aparna | Effort (rough) |
+| Milestone | Goal | Needs | Effort (rough) |
 |---|---|---|---|
 | 7a Lake series for every scored lake | One lake-specific area series per lake | Nothing | 1 to 2 h per lake, mostly waiting |
-| 7b QGIS crest points | Crest points, dam height and width per lake | **Aparna does this** | 1 to 2 h first lake, then 45 to 60 min each |
+| 7b QGIS crest points | Crest points, dam height and width per lake | **Manual Task** | 1 to 2 h first lake, then 45 to 60 min each |
 | 7c Risk code | Freeboard, trend, volume, risk score | Weights confirmed | 2 to 3 days |
 | 8 Evaluation | Leave-one-lake-out, ablations, hindcast, false alarms | Review hindcast framing | 2 to 3 days |
 | 9 Serving | SQLite, FastAPI, three Dockerfiles, compose | Test locally | 2 days |
@@ -91,7 +91,7 @@ Then look at `reports/{lake}_burst_detection.png` for each lake: the series shou
 
 Optional improvement that also helps M7: build one series per Sentinel-1 orbit track (ascending 12 and descending 48 at South Lhonak) to remove viewing-geometry offsets. First fix the date-to-orbit lookup (only 14 of 98 stack dates matched the scene metadata).
 
-## 3. Step 7b: moraine crest points in QGIS (done by Aparna)
+## 3. Step 7b: moraine crest points in QGIS (done manually)
 
 ### 3.1 What you are producing and why
 Freeboard is the vertical distance between the lake surface and the lowest point of the dam crest. We cannot measure it directly, so M7 computes two proxies per date from your crest points and the segmented shoreline:
@@ -202,7 +202,7 @@ Unit tests to write first: a flat synthetic series gives scores near 0 and no al
 
 ### 4.2 Confirm the weights (M7-B) and fix the success criteria
 Before any hindcast run:
-1. Aparna confirms or changes the weights in `configs/pipeline.yaml`, and writes a short justification (needed for the methodology section). The starting values come from the literature.
+1. User confirms or changes the weights in `configs/pipeline.yaml`, and writes a short justification (needed for the methodology section). The starting values come from the literature.
 2. Write `docs/PREREGISTRATION.md` and commit it. It must state: the lakes scored; the weights; EWMA and CUSUM parameters; the baseline windows; and the hindcast success criterion. Suggested criterion (adjust, then freeze): *South Lhonak's EWMA risk score ranks in the top two of the five scored lakes on at least 70% of dates in the six months before 2023-10-04, and the quiet lakes raise no more than one CUSUM alert per lake-year.* Report the lead time above the alert threshold, but never claim the event date was predicted.
 3. Commit it before running M8's hindcast so the commit time shows the criterion was fixed first.
 
@@ -272,7 +272,7 @@ curl http://localhost:8000/lakes/south_lhonak/history
 
 1. **README.** Setup; how to add a new lake (add it to `lakes.yaml`, download and stack, pick the checkpoint, run `make_lake_roi.py`, digitise crest points, run risk); how to retrain (Kaggle commands); how to read a risk score and its alert; the "make dataset" section already in the README.
 2. **`provenance.csv`.** All datasets with dates, access route, licence and attribution text. Include the Third Pole inventory (confirm licence and citation), GLOID (confirm the DOI and year; see `DATA_PROVENANCE.md`) and Copernicus data statements.
-3. **Evaluation report** from the M8 tables, with the limitations in `docs/HANDOFF.md` section 0.
+3. **Evaluation report** from the M8 tables, with the limitations in `docs/M6_MULTI_LAKE_RESULTS.md` (sections 5 and 8).
 4. **Demo notebook.** For one lake: plot the area series, the risk score and flagged alerts; for South Lhonak, mark the burst.
 5. Final review by Aparna of the README and the methodology write-up before the project is called done.
 

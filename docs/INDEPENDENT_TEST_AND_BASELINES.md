@@ -1,6 +1,6 @@
 # Independent test set (50 lakes) and baselines: step-by-step
 
-Handoff for the person continuing this work. Read `docs/HANDOFF.md` first for project state.
+Instructions for the person continuing this work. The lake-series results are in `docs/M6_MULTI_LAKE_RESULTS.md`.
 
 ## 0. Goal and what "independent" means
 
@@ -146,4 +146,4 @@ Do not commit: `data/`, `.env`, `ServiceAccountKey.json`, `*.pt`, zips.
 | 7 Report | 1 h | small |
 | **Total** | **about 1 to 1.5 working days** | **under 2 GB** |
 
-Check free disk before step 2. At the time of writing about 17 GB was free on the original machine.
+
