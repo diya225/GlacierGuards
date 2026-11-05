@@ -1,0 +1,7 @@
+lake,role,series_basis,scenes,median_area_km2,manual_outline_km2,normal_change_sigma_km2,min_detectable_drop_km2_4sigma,min_detectable_pct_of_area,false_alarms,false_alarms_confirmed,first_detection,detection_lag_days,first_confirmed_detection,pertrack_sigma_km2,pertrack_min_detectable_pct_of_area,pertrack_false_alarms,pertrack_first_detection
+South Lhonak,burst 2023-10-04,Sentinel-1 dates,175,1.47,1.667,0.14,0.558,38,2 of 158,0 of 158,2023-10-07,3,2023-10-07,0.019,5,6 of 144,2023-10-07
+Imja Tsho,quiet,Sentinel-1 dates,178,1.564,1.719,0.078,0.311,20,2 of 171,2 of 171,,,,0.025,6,7 of 160,
+Thulagi,quiet,Sentinel-1 dates,265,0.847,0.97,0.168,0.673,79,0 of 258,0 of 258,,,,0.02,9,8 of 241,
+Lower Ngole (Thame),burst 2024-08-16,Sentinel-1 dates,304,0.032,0.045,0.006,0.024,76,2 of 277,0 of 277,2024-08-19,3,2024-08-19,0.005,58,3 of 255,2024-08-19
+Jinwuco (SE Tibet),burst 2020-06-26,Sentinel-1 dates,122,0.496,0.556,0.151,0.604,122,0 of 72,0 of 72,none,,none,0.022,18,2 of 64,2020-07-03
+Chamai (W Tibet),burst 2021-10-05,Sentinel-1 dates,175,0.092,0.219,0.051,0.202,220,0 of 131,0 of 131,none,,none,0.02,85,8 of 120,2021-10-25
