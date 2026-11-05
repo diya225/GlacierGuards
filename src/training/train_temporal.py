@@ -26,6 +26,7 @@ import torch.nn.functional as F
 from src.models.temporal_model import build_temporal
 from src.utils.config_loader import load_pipeline_config
 
+DEV = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 RES = 64          # working resolution (lake AOI downsampled by area averaging)
 MIN_HISTORY = 2
 
@@ -34,11 +35,19 @@ def load_series(lake: str):
     d = ROOT / "data" / "predictions" / lake
     csv = pd.read_csv(d / "area_series.csv")
     frames, px = [], None
+    roi_f = d / "roi.npy"
+    roi = np.load(roi_f) if roi_f.exists() else None    # fixed lake ROI (scripts/make_lake_roi.py): measure ONE lake
+    if roi is not None:
+        rr, cc = np.where(roi)
+        sl = (slice(rr.min(), rr.max() + 1), slice(cc.min(), cc.max() + 1))
     for dt in csv["date"]:
-        p = torch.from_numpy(np.load(d / f"{dt}.npy").astype(np.float32))[None, None]
+        arr = np.load(d / f"{dt}.npy").astype(np.float32)
+        if roi is not None:
+            arr = (arr * roi)[sl]
+        p = torch.from_numpy(arr)[None, None]
         frames.append(F.adaptive_avg_pool2d(p, RES)[0])
     # pixel area (m^2) of one working-res cell, from the 10 m grid
-    h, w = np.load(d / f"{csv['date'][0]}.npy").shape
+    h, w = (arr.shape if roi is not None else np.load(d / f"{csv['date'][0]}.npy").shape)
     cell_m2 = (h * 100.0 / RES) * (w / RES)
     days = [date.fromisoformat(x).toordinal() for x in csv["date"]]
     return csv, torch.stack(frames), np.array(days), cell_m2
@@ -59,9 +68,9 @@ def batch(samples):
 
 def fit(samples, kind, hidden, layers, epochs, lr, seed=0):
     torch.manual_seed(seed)
-    m = build_temporal(kind, hidden, layers)
+    m = build_temporal(kind, hidden, layers).to(DEV)
     opt = torch.optim.AdamW(m.parameters(), lr=lr, weight_decay=1e-4)
-    x, dt, y = batch(samples)
+    x, dt, y = (t.to(DEV) for t in batch(samples))
     for _ in range(epochs):
         perm = torch.randperm(len(x))
         for b in perm.split(8):
@@ -75,7 +84,7 @@ def fit(samples, kind, hidden, layers, epochs, lr, seed=0):
 @torch.no_grad()
 def predict(m, s):
     m.eval()
-    return torch.sigmoid(m(s["x"][None], s["dt"][None]))[0]
+    return torch.sigmoid(m(s["x"][None].to(DEV), s["dt"][None].to(DEV)))[0].cpu()
 
 
 def main():
@@ -87,6 +96,7 @@ def main():
     ap.add_argument("--lr", type=float, default=2e-3)
     ap.add_argument("--train-before", help="YYYY-MM-DD: fit only on targets dated before this (e.g. burst date); later targets are scored out-of-sample")
     ap.add_argument("--cv-year", action="store_true", help="blocked CV: score each season with a model that never saw that season (cheap, out-of-sample)")
+    ap.add_argument("--tag", default="", help="suffix for output files (e.g. _smoke) so test runs never overwrite real results")
     ap.add_argument("--loo", action="store_true", help="leave-one-target-out residuals (out-of-sample)")
     a = ap.parse_args()
     cfg = load_pipeline_config()["model"]["temporal"]
@@ -99,16 +109,19 @@ def main():
         csv, frames, days, cell = load_series(lake)
         data[lake] = (csv, cell)
         samples += build_samples(frames, days, N, lake)
-    print(f"{len(samples)} sequences, N={N}, model={kind}, hidden={a.hidden}")
+    print(f"device={DEV}; {len(samples)} sequences, N={N}, model={kind}, hidden={a.hidden}", flush=True)
 
     def sdate(t):
         return data[t["lake"]][0]["date"][t["i"]]
     train = [t for t in samples if not a.train_before or sdate(t) < a.train_before]
     print(f"fit on {len(train)}/{len(samples)} sequences" + (f" (targets before {a.train_before})" if a.train_before else ""))
+    import time
+    t0 = time.time()
     final = fit(train, kind, a.hidden, layers, a.epochs, a.lr)
+    print(f"first fit took {time.time() - t0:.0f}s", flush=True)
     (ROOT / "models").mkdir(exist_ok=True)
-    torch.save({"model": final.state_dict(), "kind": kind, "hidden": a.hidden, "layers": layers, "N": N, "res": RES},
-               ROOT / "models" / "temporal_checkpoint.pt")
+    torch.save({"model": {k: v.cpu() for k, v in final.state_dict().items()}, "kind": kind, "hidden": a.hidden, "layers": layers, "N": N, "res": RES},
+               ROOT / "models" / f"temporal_checkpoint{a.tag}.pt")
 
     cv_models = {}
     for lake, (csv, cell) in data.items():
@@ -116,7 +129,10 @@ def main():
         for s in [s for s in samples if s["lake"] == lake]:
             if a.cv_year:
                 yr = csv["date"][s["i"]][:4]
-                model = cv_models.setdefault(yr, fit([t for t in train if sdate(t)[:4] != yr], kind, a.hidden, layers, a.epochs, a.lr))
+                if yr not in cv_models:
+                    print(f"fitting model without season {yr} ...", flush=True)
+                    cv_models[yr] = fit([t for t in train if sdate(t)[:4] != yr], kind, a.hidden, layers, a.epochs, a.lr)
+                model = cv_models[yr]
             elif a.loo and any(t is s for t in train):
                 model = fit([t for t in train if t is not s], kind, a.hidden, layers, a.epochs, a.lr)
             else:
@@ -129,9 +145,12 @@ def main():
                          "persistence_area_m2": persist, "residual_m2": obs_a - pred_a,
                          "pixel_mae": float((pred - s["y"]).abs().mean()), "out_of_sample": bool(a.loo or a.cv_year or (a.train_before and csv["date"][s["i"]] >= a.train_before))})
         df = pd.DataFrame(rows)
-        mad = np.median(np.abs(df["residual_m2"] - df["residual_m2"].median())) * 1.4826
-        df["residual_z"] = (df["residual_m2"] - df["residual_m2"].median()) / max(mad, 1.0)
-        out = ROOT / "data" / "predictions" / lake / "anomaly_series.csv"
+        # z-score from PRE-burst out-of-sample residuals only when --train-before is set (no peeking at the burst window)
+        ref = df[df["date"] < a.train_before] if a.train_before else df
+        centre = ref["residual_m2"].median()
+        mad = np.median(np.abs(ref["residual_m2"] - centre)) * 1.4826
+        df["residual_z"] = (df["residual_m2"] - centre) / max(mad, 1.0)
+        out = ROOT / "data" / "predictions" / lake / f"anomaly_series{a.tag}.csv"
         df.to_csv(out, index=False)
         print(df.round(2).to_string(index=False))
 
