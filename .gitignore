@@ -12,6 +12,7 @@ ServiceAccountKey.json
 data/raw/
 data/interim/
 data/processed/
+data/predictions/
 
 # Model weights
 *.pt
@@ -61,4 +62,4 @@ glacierguards_kaggle.zip
 Glacial lake inventory.zip
 glacierguards_temporal.zip
 
-docs/HANDOFF.md
+CLAUDE.md

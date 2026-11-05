@@ -41,13 +41,61 @@ lakes:
 
   - id: gongbatongsha_co
     name: Gongbatongsha Co
-    lat: 28.080         # Verified: 28°4'48"N from Scientific Reports 2022 (Springer)
-    lon: 86.060         # Verified: 86°3'36"E from Scientific Reports 2022
-    alt_m: 4619         # Verified: from same source
+    lat: 28.0781        # 28°04'41"N as read from Sattar et al. 2022 (Sci Rep 12:12421, doi:10.1038/s41598-022-16337-6); replaces the earlier 28.080 (about 1 km off)
+    lon: 86.0700        # 86°04'12"E, same source (earlier value 86.060)
+    alt_m: 4623         # same source (4623 m); the paper gives lake area 0.017 km2 before the GLOF, another source 0.14 km2 -> [VERIFY]
     dam_type: moraine
     role: hindcast_positive   # burst on 2016-07-05 — good "limits" test case
     burst_date: "2016-07-05"
     source: "Scientific Reports 2022 (doi:10.1038/s41598-022-16337-6)"
+    buffer_km: 2.0
+    crest_points: []
+    dam:
+      height_m: null
+      width_m: null
+      has_outlet_channel: false
+
+  - id: thame_lower_ngole
+    name: Lower Ngole (Ngole Pokhari), Thame, Khumbu   # ICIMOD calls the 2024 event "Thyanbo glacial lake"; identity with this lake not verified
+    lat: 27.82796       # centroid of GLOID lake GLO_86.57281_27.82796 (area 0.048 km2 in 2017-2023, 0.013 km2 in 2024)
+    lon: 86.57281
+    alt_m: 4718         # Khadka et al., NHESS 26, 4131 (2026): lower Ngole lake 4718 m; moraine-dammed
+    dam_type: moraine
+    role: hindcast_positive   # cascading GLOF 2024-08-16 (upper Ngole lake overtopped, lower lake breached)
+    burst_date: "2024-08-16"
+    source: "Khadka et al. NHESS 2026 (doi:10.5194/nhess-26-4131-2026); ICIMOD press release 2024-08-18; GLOID v1.02"
+    buffer_km: 2.0
+    crest_points: []
+    dam:
+      height_m: null
+      width_m: null
+      has_outlet_channel: false
+
+  - id: jinwuco
+    name: Jinwuco (Yigong Zangbo basin, SE Tibet)
+    lat: 30.356         # HMAGLOFDB v1.3.0 event 508 (Zheng et al. 2021); lies inside Third Pole inventory lake 4880
+    lon: 93.631
+    alt_m: 4447
+    dam_type: moraine
+    role: hindcast_positive   # GLOF 2020-06-26; inventory area 0.556 km2 (2018) -> 0.252 km2 (2020)
+    burst_date: "2020-06-26"
+    source: "HMAGLOFDB v1.3.0 (doi:10.5281/zenodo.7271187), event 508"
+    buffer_km: 2.0
+    crest_points: []
+    dam:
+      height_m: null
+      width_m: null
+      has_outlet_channel: false
+
+  - id: chamai
+    name: Chamai (Langqen Zangbo basin, W Tibet)
+    lat: 31.914649      # HMAGLOFDB v1.3.0 event 731 (Ma et al. 2024); inside Third Pole inventory lake 3132
+    lon: 78.840557
+    alt_m: 5600
+    dam_type: moraine
+    role: hindcast_positive   # GLOF 2021-10-05; inventory area 0.229 km2 (2020) -> 0.063 km2 (2022)
+    burst_date: "2021-10-05"
+    source: "HMAGLOFDB v1.3.0 (doi:10.5281/zenodo.7271187), event 731"
     buffer_km: 2.0
     crest_points: []
     dam:
