@@ -76,13 +76,15 @@ def build_stack(gid, year):
     info = {"lake": gid, "year": year, "s2_used": pick, "s2_valid_fraction": {k: round(v[0], 4) for k, v in vf.items()},
             "s1_present": s1_p.exists(), "s2_scenes": {k: meta["products"].get(k, {}).get("n_scenes") for k in cands},
             "s1_scenes": meta["products"].get("s1_julaug", {}).get("n_scenes"), "s2_windows": {k: meta["products"].get(k, {}).get("window") for k in cands},
-            "grid": meta["grid"], "channels": CHANNELS}
+            "grid": meta["grid"], "channels": CHANNELS,
+            "vv_valid_fraction": round(float((stack[0] != NODATA).mean()), 4),
+            "ndwi_green_valid_fraction": round(float((stack[3] != NODATA).mean()), 4)}
     return (stack, prof, info), None
 
 
-def process(gid, year):
+def process(gid, year, skip_tiles=False):
     out_t = PROC / gid / str(year)
-    if (out_t / "tiles.npz").exists():
+    if (INTERIM / gid / str(year) / "stack.tif").exists() if skip_tiles else (out_t / "tiles.npz").exists():
         return "skip"
     res, err = build_stack(gid, year)
     if res is None:
@@ -96,6 +98,8 @@ def process(gid, year):
         dst.write(stack)
         dst.descriptions = tuple(CHANNELS)
     (idir / "stack_meta.json").write_text(json.dumps(info, indent=2))
+    if skip_tiles:
+        return "ok"
     tiles = tile_image(stack, 256, OVERLAP)
     arr = np.stack([t for t, _, _ in tiles])
     valid = np.isfinite(arr) & (arr != NODATA)
@@ -112,11 +116,14 @@ def process(gid, year):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit-lakes", type=int)
+    ap.add_argument("--lakes-csv", default=str(ROOT / "configs" / "training_lakes.csv"))
+    ap.add_argument("--id-col", default="GLO_ID")
+    ap.add_argument("--skip-tiles", action="store_true", help="stop after stack.tif + stack_meta.json (evaluation lakes)")
     a = ap.parse_args()
-    lakes = pd.read_csv(ROOT / "configs" / "training_lakes.csv").GLO_ID.tolist()[: a.limit_lakes]
+    lakes = pd.read_csv(a.lakes_csv)[a.id_col].tolist()[: a.limit_lakes]
     for gid in lakes:
         for ydir in sorted(p for p in (RAW / gid).glob("20*") if (p / "meta.json").exists()):
-            st = process(gid, int(ydir.name))
+            st = process(gid, int(ydir.name), a.skip_tiles)
             print(gid, ydir.name, st, flush=True)
 
 

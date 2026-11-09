@@ -63,3 +63,8 @@ Glacial lake inventory.zip
 glacierguards_temporal.zip
 
 CLAUDE.md
+
+# Independent-test artefacts
+kaggle_dataset/
+data/eval/
+*.joblib

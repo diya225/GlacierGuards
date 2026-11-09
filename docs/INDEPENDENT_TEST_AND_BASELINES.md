@@ -12,6 +12,21 @@ The segmentation model (U-Net, EfficientNet-B3, 10 input channels) was trained o
 
 Already validated (for context, do not redo): GLOID vs the inventory polygons on 16 overlapping lakes gives a median polygon IoU of 0.95 (`reports/gloid_vs_thirdpole.csv`); the model on South Lhonak vs its 2022 manual outline gives IoU 0.83 to 0.97.
 
+## 0b. Scripts that now exist (written 2026-11-09, smoke-tested on 6 lakes)
+
+Run in this order, from the repo root, with `PYTHONUTF8=1` and `.venv\Scripts\python.exe`:
+```
+python src/ingestion/tp_fetch.py --workers 4            # step 2; rerun until no 'failed' rows for TP_* in data/raw/_gloid_manifest.csv
+python src/preprocessing/gloid_stack_tile.py --lakes-csv configs/independent_test_lakes.csv --id-col lake_id --skip-tiles   # step 3
+python scripts/tp_to_masks.py                           # step 4 -> data/eval/, reports/independent_eval/reference_check.csv
+python scripts/train_rf_baseline.py                     # step 6c, needs kaggle_dataset/ (about 10 min); -> models/rf_baseline.joblib
+python scripts/eval_independent.py                      # steps 5 and 6a-d -> reports/independent_eval/per_lake.csv
+python scripts/independent_stats.py                     # step 7 -> SUMMARY.md, figures, QA overlays, checks 4 and 6
+```
+Backups: `tp_fetch.py --lakes TP_xxxx` then the same later steps, and `eval_independent.py --roles primary backup` or `--lakes ...`; log replacements in `reports/independent_replacements.csv` (columns `replaced,replacement,reason`).
+Choices made in the code (fixed before scoring): pixels of other inventory lakes inside the 400 m buffer are excluded from the target score; invalid pixels are not masked (a baseline that cannot see a pixel predicts "not water"); the NDWI baseline needs optical pixels, the SAR baselines need VV pixels; the RF follows the same SAR-only rule as the U-Net below 80 % optical coverage but was trained without optical dropout; Otsu on SAR is applied to -VV. Not implemented: the optional SAR-only/optical-only ablations (need Kaggle).
+Check 1 is a centroid distance check (>= 3 km); check 2 (no overlap with GLOID training labels) follows from it and is not coded separately.
+
 ## 1. What you need locally (none of this is in git)
 
 | Item | Where it goes | How to get it |
