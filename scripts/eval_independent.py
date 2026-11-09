@@ -81,6 +81,13 @@ def main():
     check_distance(lakes)
     lakes = lakes[lakes.lake_id.isin(a.lakes)] if a.lakes else lakes[lakes.role.isin(a.roles)]
     model, chans = load_model(CKPT)
+    abl = {}
+    for tag, nm in (("unet_sar_only", "seg_sar_test"), ("unet_optical_only", "seg_optical_test")):
+        f = ROOT / "models" / f"{nm}.pt"
+        if f.exists():
+            m = json.loads(f.with_name(nm + "_metrics.json").read_text())
+            assert m["split"] == "test", f"{nm} is not a --split test model"
+            abl[tag] = load_model(f)
     rf = None
     rf_path = ROOT / "models" / "rf_baseline.joblib"
     if not a.no_rf and rf_path.exists():
@@ -112,6 +119,8 @@ def main():
         p_unet, cov, used_opt = predict_scene(model, chans, stack)
         np.save(ed / "pred_unet.npy", p_unet.astype(np.float16))
         preds = {"unet": p_unet > THR}
+        for tag, (am, ac) in abl.items():
+            preds[tag] = predict_scene(am, ac, stack)[0] > THR
         ndwi_ok = valid[3]
         preds["ndwi_0.3"] = ndwi_ok & (stack[3] > 0.3)
         o = otsu_pred(stack[3], ndwi_ok)

@@ -95,7 +95,7 @@ def main():
     ax.set_xscale("log"); ax.set_xlabel("reference area (km2)"); ax.set_ylabel("IoU (target, 400 m buffer)"); ax.legend(); ax.grid(alpha=.3)
     fig.tight_layout(); fig.savefig(OUT / "iou_vs_area.png", dpi=140); plt.close(fig)
     order = [c for c in ("XS", "S", "M", "L", "XL") if c in set(pl.size_class)]
-    mods = [m for m in ("unet", "rf_0.5", "ndwi_0.3", "sar_-15dB") if m in set(pl.model)]
+    mods = [m for m in ("unet", "unet_sar_only", "unet_optical_only", "rf_0.5", "ndwi_0.3", "sar_-15dB") if m in set(pl.model)]
     fig, ax = plt.subplots(figsize=(8, 4.5))
     for i, m in enumerate(mods):
         data = [pl[(pl.model == m) & (pl.size_class == c)].iou_target.dropna() for c in order]
