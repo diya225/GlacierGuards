@@ -141,6 +141,9 @@ def main():
               "Overlays: reports/qa/independent/. Figures: iou_vs_area.png, iou_by_size_class.png.", "",
               "## Commands", "```", "python src/ingestion/tp_fetch.py --workers 4", "python src/preprocessing/gloid_stack_tile.py --lakes-csv configs/independent_test_lakes.csv --id-col lake_id --skip-tiles",
               "python scripts/tp_to_masks.py", "python scripts/train_rf_baseline.py", "python scripts/eval_independent.py", "python scripts/independent_stats.py", "```"]
+    notes = OUT / "NOTES.md"                      # hand-written run notes, kept across reruns
+    if notes.exists():
+        lines += ["", notes.read_text(encoding="utf-8").rstrip()]
     (OUT / "SUMMARY.md").write_text("\n".join(lines), encoding="utf-8")
     print(overall.round(3).to_string(index=False))
     print(wil.round(4).to_string(index=False))
