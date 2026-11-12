@@ -68,3 +68,9 @@ CLAUDE.md
 kaggle_dataset/
 data/eval/
 *.joblib
+
+# Generated QGIS working rasters & lock/backup files
+data/labels/manual/*/working/
+qgis/*.qgz~
+*.gpkg-shm
+*.gpkg-wal

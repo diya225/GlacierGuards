@@ -280,11 +280,12 @@ def _download_image_to_file(
             return
 
         except requests.HTTPError as exc:
-            if exc.response is not None and exc.response.status_code == 429:
+            status = exc.response.status_code if exc.response is not None else 0
+            if status in (429, 500, 502, 503, 504): # i added a few more error codes
                 wait = 2**attempt * 30  # back-off: 60s, 120s, 240s
                 logger.warning(
-                    "Rate limited by GEE. Waiting %ds before retry %d/%d …",
-                    wait, attempt, max_retries,
+                    "GEE API error %s. Waiting %ds before retry %d/%d …",
+                    status, wait, attempt, max_retries,
                 )
                 time.sleep(wait)
             else:

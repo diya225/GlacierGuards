@@ -388,7 +388,80 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Print step-by-step QGIS digitizing instructions.",
     )
+    parser.add_argument(
+        "--moraine-gpkg",
+        default=None,
+        help="Path to 3-layer moraine annotation GeoPackage (dam_footprint, crest_line, crest_points).",
+    )
+    parser.add_argument(
+        "--dem",
+        default=None,
+        help="DEM GeoTIFF path for elevation sampling (default: data/raw/{lake}/dem/dem.tif).",
+    )
+    parser.add_argument(
+        "--extract-dem",
+        action="store_true",
+        help="Sample DEM elevations at crest_points before validating.",
+    )
+    parser.add_argument(
+        "--save-extracted-gpkg",
+        action="store_true",
+        help="Persist DEM-sampled elevation_m values back into the GeoPackage.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default=None,
+        help="Directory for moraine annotation JSON report/metadata (default: data/labels/manual/{lake}).",
+    )
+    parser.add_argument(
+        "--yaml-out",
+        default=None,
+        help="Optional path to write compatible lakes.yaml snippet.",
+    )
+    parser.add_argument(
+        "--apply-to-lakes-yaml",
+        action="store_true",
+        help="Safely update the target lake's crest_points in configs/lakes.yaml if validation passes.",
+    )
     return parser.parse_args()
+
+
+def _run_moraine_export(args: argparse.Namespace, lake_id: str) -> None:
+    from src.labeling.moraine_validation import (
+        apply_to_lakes_yaml,
+        format_lakes_yaml_block,
+        validate_moraine_geopackage,
+        write_annotation_outputs,
+    )
+
+    gpkg_path = Path(args.moraine_gpkg)
+    dem_path = Path(args.dem) if args.dem else (PROJECT_ROOT / "data" / "raw" / lake_id / "dem" / "dem.tif")
+    output_dir = Path(args.output_dir) if args.output_dir else (PROJECT_ROOT / "data" / "labels" / "manual" / lake_id)
+    yaml_out = Path(args.yaml_out) if args.yaml_out else (output_dir / f"{lake_id}_lakes_patch.yaml")
+
+    report = validate_moraine_geopackage(
+        gpkg_path=gpkg_path,
+        lake_id=lake_id,
+        dem_path=dem_path if args.extract_dem else None,
+        extract_dem=args.extract_dem,
+        save_extracted_gpkg=args.save_extracted_gpkg,
+    )
+    report_path, metadata_path = write_annotation_outputs(report, output_dir, yaml_out=yaml_out)
+    logger.info("Moraine report written to %s", report_path)
+    logger.info("Moraine metadata written to %s", metadata_path)
+
+    for w in report["warnings"]:
+        logger.warning("%s", w)
+    for e in report["errors"]:
+        logger.error("%s", e)
+
+    if report["valid"]:
+        print("\n" + format_lakes_yaml_block(report))
+        if args.apply_to_lakes_yaml:
+            updated = apply_to_lakes_yaml(report)
+            logger.info("Updated %s for lake '%s'.", updated, lake_id)
+    else:
+        raise SystemExit(1)
 
 
 def main() -> None:
@@ -404,7 +477,10 @@ def main() -> None:
 
     lake = get_lake_by_id(args.lake)
 
-    if args.shapefile_dir:
+    if args.moraine_gpkg:
+        _run_moraine_export(args, lake["id"])
+
+    elif args.shapefile_dir:
         batch_convert_dir(lake["id"], Path(args.shapefile_dir))
 
     elif args.shapefile:
@@ -417,8 +493,8 @@ def main() -> None:
 
     else:
         raise ValueError(
-            "Specify one of: --shapefile <path>, --shapefile-dir <dir>, "
-            "--qa-only, or --help-qgis."
+            "Specify one of: --moraine-gpkg <path>, --shapefile <path>, "
+            "--shapefile-dir <dir>, --qa-only, or --help-qgis."
         )
 
 
